@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Odds — An Almanac of Improbabilities</title>
+<meta name="description" content="An interactive almanac of improbabilities: everyday odds, drawn to scale, with a simulator that shows you how badly small samples lie.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23F2EEE6'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23D6402A'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F2EEE6;
+    --paper-2:#E9E3D7;
+    --ink:#16130E;
+    --ink-2:#4B4237;
+    --ink-3:#7B7161;
+    --rule:#D5CCBB;
+    --red:#D6402A;
+    --red-2:#A82B18;
+    --red-pale:#F7DED8;
+    --max:1180px;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    --sans:"Space Grotesk","Helvetica Neue",Arial,sans-serif;
+    --serif:"Fraunces","Iowan Old Style",Georgia,serif;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:17px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  body::after{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:9998;opacity:.055;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  ::selection{background:var(--red);color:var(--paper)}
+  a{color:var(--ink);text-decoration-color:var(--red);text-underline-offset:3px}
+  a:hover{color:var(--red)}
+  :focus-visible{outline:2px solid var(--red);outline-offset:3px}
+
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 clamp(18px,4vw,40px)}
+  .mono{font-family:var(--mono);text-transform:uppercase;letter-spacing:.19em;font-size:.66rem;font-weight:500}
+  .rule{height:1px;background:var(--rule);border:0;margin:0}
+
+  /* ── masthead ─────────────────────────────── */
+  .topbar{
+    border-bottom:1px solid var(--ink);
+    background:var(--paper);
+  }
+  .topbar .wrap{
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding-top:11px;padding-bottom:11px;flex-wrap:wrap;
+  }
+  .topbar .mono{color:var(--ink-2)}
+  .topbar .dotmark{
+    width:11px;height:11px;border-radius:50%;background:var(--red);
+    display:inline-block;margin-right:9px;vertical-align:-1px;
+  }
+
+  /* ── hero ─────────────────────────────────── */
+  .hero{padding:clamp(38px,7vw,86px) 0 clamp(30px,5vw,58px)}
+  .kicker{color:var(--red);margin:0 0 22px}
+  .hero h1{
+    font-family:var(--serif);
+    font-weight:900;
+    font-size:clamp(2.7rem,9.5vw,7.2rem);
+    line-height:.93;
+    letter-spacing:-.035em;
+    margin:0 0 26px;
+    max-width:14ch;
+  }
+  .hero h1 em{font-style:italic;font-weight:400;color:var(--red)}
+  .lede{
+    font-size:clamp(1.06rem,1.85vw,1.32rem);
+    line-height:1.6;
+    color:var(--ink-2);
+    max-width:58ch;
+    margin:0 0 34px;
+  }
+  .hero-meta{
+    display:flex;gap:clamp(20px,5vw,58px);flex-wrap:wrap;
+    border-top:1px solid var(--rule);padding-top:18px;
+  }
+  .hero-meta div{display:flex;flex-direction:column;gap:5px}
+  .hero-meta .n{font-family:var(--serif);font-size:1.85rem;font-weight:700;line-height:1;letter-spacing:-.02em}
+  .hero-meta .mono{color:var(--ink-3)}
+
+  /* ── figure: dot field ────────────────────── */
+  .figure{
+    border:1px solid var(--ink);
+    background:var(--paper-2);
+    margin:clamp(28px,5vw,52px) 0 0;
+  }
+  .figure-head{
+    display:flex;justify-content:space-between;align-items:baseline;gap:14px;
+    padding:13px 18px;border-bottom:1px solid var(--rule);flex-wrap:wrap;
+  }
+  .figure-head .mono{color:var(--ink-2)}
+  .figure-body{padding:clamp(18px,3.5vw,34px)}
+  .dotfield{
+    display:grid;
+    grid-template-columns:repeat(var(--cols,40),minmax(0,1fr));
+    gap:clamp(2px,.45vw,5px);
+  }
+  .dot{aspect-ratio:1;border-radius:50%;background:var(--rule)}
+  .dot.lit{
+    background:var(--red);
+    box-shadow:0 0 0 3px rgba(214,64,42,.16);
+    animation:pulse 2.6s ease-in-out infinite;
+    position:relative;z-index:2;
+  }
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.55)}}
+  .figure figcaption{
+    padding:14px 18px 17px;border-top:1px solid var(--rule);
+    color:var(--ink-2);font-size:.92rem;
+  }
+  .figure figcaption b{color:var(--ink)}
+
+  /* ── section head ─────────────────────────── */
+  .section{padding:clamp(52px,9vw,110px) 0 0}
+  .sec-head{
+    display:grid;grid-template-columns:minmax(0,1fr);gap:12px;
+    border-top:2px solid var(--ink);padding-top:16px;margin-bottom:clamp(26px,4vw,44px);
+  }
+  .sec-head .mono{color:var(--red)}
+  .sec-head h2{
+    font-family:var(--serif);font-weight:700;
+    font-size:clamp(2.05rem,5.2vw,3.65rem);
+    line-height:1.02;letter-spacing:-.028em;margin:0;max-width:20ch;
+  }
+  .sec-head p{color:var(--ink-2);max-width:56ch;margin:2px 0 0}
+
+  /* ── the board ────────────────────────────── */
+  .board{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));
+    gap:1px;background:var(--rule);border:1px solid var(--rule);
+  }
+  .card{
+    background:var(--paper);padding:clamp(20px,2.6vw,27px);
+    display:flex;flex-direction:column;gap:12px;
+    transition:background .35s ease,transform .35s ease;
+  }
+  .card:hover{background:var(--red-pale)}
+  .card .tag{color:var(--red)}
+  .card .odds{
+    font-family:var(--serif);font-weight:900;
+    font-size:clamp(1.95rem,3.4vw,2.55rem);
+    line-height:.98;letter-spacing:-.035em;
+  }
+  .card .odds sup{font-size:.52em;font-weight:700;top:-.55em}
+  .meter{height:5px;background:var(--paper-2);border:1px solid var(--rule);position:relative;overflow:hidden}
+  .meter i{position:absolute;inset:0 auto 0 0;background:var(--red);width:0;transition:width 1s cubic-bezier(.22,1,.36,1)}
+  .card h3{
+    font-family:var(--serif);font-weight:700;font-size:1.28rem;
+    line-height:1.18;letter-spacing:-.016em;margin:2px 0 0;
+  }
+  .card p{margin:0;color:var(--ink-2);font-size:.935rem;line-height:1.58}
+  .footnote{color:var(--ink-3);font-size:.82rem;margin:18px 0 0;max-width:70ch}
+
+  /* ── simulator ────────────────────────────── */
+  .sim{
+    border:1px solid var(--ink);background:var(--paper-2);
+    display:grid;grid-template-columns:minmax(0,1fr);
+  }
+  @media(min-width:920px){ .sim{grid-template-columns:325px minmax(0,1fr)} }
+  .sim-side{
+    padding:clamp(22px,3vw,32px);border-bottom:1px solid var(--rule);
+    display:flex;flex-direction:column;gap:19px;
+  }
+  @media(min-width:920px){ .sim-side{border-bottom:0;border-right:1px solid var(--rule)} }
+  .sim-side h3{
+    font-family:var(--serif);font-size:1.55rem;font-weight:700;
+    letter-spacing:-.022em;line-height:1.1;margin:0;
+  }
+  .field{display:flex;flex-direction:column;gap:8px}
+  .field label{color:var(--ink-3)}
+  select{
+    font-family:var(--mono);font-size:.82rem;
+    padding:11px 12px;border:1px solid var(--ink);background:var(--paper);
+    color:var(--ink);border-radius:0;width:100%;cursor:pointer;
+  }
+  .btns{display:flex;flex-wrap:wrap;gap:7px}
+  button{
+    font-family:var(--mono);text-transform:uppercase;letter-spacing:.13em;font-size:.66rem;
+    padding:11px 14px;border:1px solid var(--ink);background:var(--paper);color:var(--ink);
+    cursor:pointer;border-radius:0;transition:background .18s,color .18s,transform .12s;
+  }
+  button:hover{background:var(--ink);color:var(--paper)}
+  button:active{transform:translateY(1px)}
+  button.primary{background:var(--red);border-color:var(--red);color:#fff}
+  button.primary:hover{background:var(--red-2);border-color:var(--red-2)}
+  .true-odds{
+    font-family:var(--serif);font-size:2.35rem;font-weight:900;
+    letter-spacing:-.035em;line-height:1;
+  }
+  .sim-note{color:var(--ink-2);font-size:.895rem;margin:0;border-top:1px solid var(--rule);padding-top:15px}
+  .sim-main{padding:clamp(18px,2.6vw,28px);min-width:0}
+  .chartwrap{width:100%;background:var(--paper);border:1px solid var(--rule)}
+  .chartwrap svg{display:block;width:100%;height:auto}
+  .readout{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));
+    gap:1px;background:var(--rule);border:1px solid var(--rule);margin-top:14px;
+  }
+  .readout div{background:var(--paper);padding:13px 15px}
+  .readout .mono{color:var(--ink-3);display:block;margin-bottom:5px}
+  .readout .v{font-family:var(--serif);font-size:1.42rem;font-weight:700;letter-spacing:-.022em;line-height:1.1}
+  .readout .v.red{color:var(--red)}
+
+  /* ── the scale ────────────────────────────── */
+  .scale{display:flex;flex-direction:column;gap:0;border-top:1px solid var(--rule)}
+  .bar{
+    display:grid;grid-template-columns:minmax(0,1fr);gap:7px;
+    padding:17px 0;border-bottom:1px solid var(--rule);
+  }
+  @media(min-width:720px){
+    .bar{grid-template-columns:255px minmax(0,1fr) 190px;align-items:center;gap:22px}
+  }
+  .bar .label{font-family:var(--serif);font-size:1.06rem;font-weight:700;letter-spacing:-.012em;line-height:1.25}
+  .bar .track{height:15px;background:var(--paper-2);border:1px solid var(--rule);position:relative;overflow:hidden}
+  .bar .track i{
+    position:absolute;inset:0 auto 0 0;width:0;
+    background:repeating-linear-gradient(135deg,var(--red) 0 7px,var(--red-2) 7px 14px);
+    transition:width 1.1s cubic-bezier(.22,1,.36,1);
+  }
+  .bar .val{font-family:var(--mono);font-size:.815rem;color:var(--ink-2);letter-spacing:.02em}
+  .bar .val sup{font-size:.78em}
+  .scale-cap{color:var(--ink-3);font-size:.82rem;margin:17px 0 0}
+
+  /* ── colophon ─────────────────────────────── */
+  .colophon{
+    margin-top:clamp(58px,9vw,108px);
+    border-top:2px solid var(--ink);
+    padding:clamp(30px,5vw,54px) 0 46px;
+  }
+  .colo-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:26px}
+  @media(min-width:760px){ .colo-grid{grid-template-columns:1.55fr 1fr 1fr} }
+  .colophon h3{font-family:var(--serif);font-size:1.65rem;font-weight:700;letter-spacing:-.025em;margin:0 0 12px}
+  .colophon p{color:var(--ink-2);font-size:.925rem;margin:0 0 11px;max-width:44ch}
+  .colophon .mono{color:var(--ink-3);margin-bottom:13px;display:block}
+  .colophon ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+  .colophon li{font-family:var(--mono);font-size:.78rem;color:var(--ink-2)}
+  .signoff{
+    margin-top:clamp(32px,5vw,52px);padding-top:19px;border-top:1px solid var(--rule);
+    display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  }
+  .signoff .mono{color:var(--ink-3)}
+
+  .reveal{opacity:0;transform:translateY(17px);transition:opacity .75s ease,transform .75s cubic-bezier(.22,1,.36,1)}
+  .reveal.in{opacity:1;transform:none}
+
+  @media(prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}
+    .reveal{opacity:1;transform:none}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="mono"><span class="dotmark"></span>The Odds — An Almanac of Improbabilities</div>
+    <div class="mono">Issue №001 · Filed under: chance</div>
+  </div>
+</header>
+
+<main>
+  <!-- ══ HERO ══ -->
+  <section class="wrap hero">
+    <p class="mono kicker reveal">§ 00 — The premise</p>
+    <h1 class="reveal">How unlikely is <em>unlikely?</em></h1>
+    <p class="lede reveal">
+      Odds are just ratios wearing a disguise. Most of us are bad at reading them once the numbers get
+      large or the events get small. What follows is a working almanac: a handful of everyday improbabilities,
+      a simulator that shows you exactly how much a short run of luck can lie, and a scale long enough to
+      hold the extremes.
+    </p>
+
+    <div class="hero-meta reveal">
+      <div><span class="n">52!</span><span class="mono">orders in a shuffled deck</span></div>
+      <div><span class="n">23</span><span class="mono">people before a shared birthday</span></div>
+      <div><span class="n">1,024</span><span class="mono">flips for ten heads in a row</span></div>
+      <div><span class="n">292M</span><span class="mono">to one on the big jackpot</span></div>
+    </div>
+
+    <figure class="figure reveal">
+      <div class="figure-head">
+        <span class="mono">Fig. 1 — One in a thousand, drawn to scale</span>
+        <span class="mono">n = 1,000 · 1 favourable</span>
+      </div>
+      <div class="figure-body">
+        <div class="dotfield" id="heroDots" data-cols="40"></div>
+      </div>
+      <figcaption>
+        Every dot is one trial. <b>The red one is the win.</b> Keep this picture in your head — almost
+        everything further down this page is harder than this.
+      </figcaption>
+    </figure>
+  </section>
+
+  <!-- ══ § 01 THE BOARD ══ -->
+  <section class="wrap section" id="board">
+    <div class="sec-head">
+      <span class="mono">§ 01 — The Board</span>
+      <h2>Eight ways the world surprises you.</h2>
+      <p>Each card is stated the honest way: one favourable outcome against the total. The bar underneath is
+         the same probability compressed onto a logarithmic length, so you can compare them at a glance.</p>
+    </div>
+    <div class="board" id="board-grid"></div>
+    <p class="footnote">
+      Figures are ballpark estimates from commonly cited sources and vary with assumptions — skill level,
+      geography, house rules, how you count a leap year. Treat them as shapes, not as promises.
+    </p>
+  </section>
+
+  <!-- ══ § 02 SIMULATOR ══ -->
+  <section class="wrap section" id="simulator">
+    <div class="sec-head">
+      <span class="mono">§ 02 — The Simulator</span>
+      <h2>Small samples are liars. Watch them get caught.</h2>
+      <p>Pick a process, run it a few thousand times, and watch the observed rate swing wildly before it
+         settles onto the truth. The shaded band is three standard errors wide — where a fair run should live.</p>
+    </div>
+
+    <div class="sim">
+      <div class="sim-side">
+        <h3>Law of large numbers</h3>
+
+        <div class="field">
+          <label class="mono" for="simPick">Process</label>
+          <select id="simPick">
+            <option value="coin">A fair coin lands heads</option>
+            <option value="die">A six-sided die rolls a 6</option>
+            <option value="ace">An ace is drawn from a full deck</option>
+            <option value="d20">A d20 rolls a natural 20</option>
+            <option value="leap">A stranger was born on 29 February</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="mono">True probability</label>
+          <div class="true-odds" id="trueOdds">1 in 2</div>
+        </div>
+
+        <div class="field">
+          <label class="mono">Run trials</label>
+          <div class="btns">
+            <button data-n="1000">1,000</button>
+            <button data-n="10000">10,000</button>
+            <button data-n="100000">100,000</button>
+          </div>
+        </div>
+
+        <div class="btns">
+          <button class="primary" id="runBtn">Run it</button>
+          <button id="resetBtn">Reset</button>
+        </div>
+
+        <p class="sim-note" id="simNote"></p>
+      </div>
+
+      <div class="sim-main">
+        <div class="chartwrap" id="chart"></div>
+        <div class="readout">
+          <div><span class="mono">Trials</span><span class="v" id="rTrials">0</span></div>
+          <div><span class="mono">Favourable</span><span class="v" id="rHits">0</span></div>
+          <div><span class="mono">Observed</span><span class="v red" id="rObs">—</span></div>
+          <div><span class="mono">Deviation</span><span class="v" id="rDev">—</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ § 03 THE SCALE ══ -->
+  <section class="wrap section" id="scale">
+    <div class="sec-head">
+      <span class="mono">§ 03 — The Scale</span>
+      <h2>From a coin flip to the heat death of the universe.</h2>
+      <p>Ten events on a single logarithmic axis. Each step to the right is ten times harder than the one
+         before it — which is why the far end stops looking like anything at all.</p>
+    </div>
+    <div class="scale" id="scale-list"></div>
+    <p class="scale-cap">Logarithmic scale. Bar length is proportional to the base-10 logarithm of the odds against.</p>
+  </section>
+</main>
+
+<!-- ══ COLOPHON ══ -->
+<footer class="wrap colophon">
+  <div class="colo-grid">
+    <div>
+      <h3>The Odds</h3>
+      <p>An almanac of improbabilities — a small, static, single-file publication about how badly humans
+         estimate chance, and what the numbers actually look like when you draw them.</p>
+      <p>No trackers, no cookies, no build step. One HTML file and a folder.</p>
+    </div>
+    <div>
+      <span class="mono">Contents</span>
+      <ul>
+        <li><a href="#board">§ 01 — The Board</a></li>
+        <li><a href="#simulator">§ 02 — The Simulator</a></li>
+        <li><a href="#scale">§ 03 — The Scale</a></li>
+      </ul>
+    </div>
+    <div>
+      <span class="mono">Colophon</span>
+      <ul>
+        <li>Display — Fraunces</li>
+        <li>Text — Space Grotesk</li>
+        <li>Data — IBM Plex Mono</li>
+        <li>Palette — paper, ink, vermillion</li>
+      </ul>
+    </div>
+  </div>
+  <div class="signoff">
+    <span class="mono">Published on GitHub Pages</span>
+    <span class="mono">№001 · Vol. MMXXV · Chance favours the prepared</span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ─────────── data ─────────── */
+  var BOARD = [
+    { tag:"Cards", odds:649739, oddsText:"1 in 649,739",
+      title:"A royal flush, dealt in five",
+      copy:"Four such hands exist among the 2,598,960 possible ones. The rarest thing that regularly happens." },
+    { tag:"Coins", odds:1024, oddsText:"1 in 1,024",
+      title:"Ten heads in a row",
+      copy:"A fair coin tells the truth about the long run and lies constantly in the short one." },
+    { tag:"People", odds:2, oddsText:"1 in 1.97",
+      title:"A shared birthday in a room of 23",
+      copy:"23 people means 230 pairs to compare. The coin flips in your favour more often than not." },
+    { tag:"Calendar", odds:1461, oddsText:"1 in 1,461",
+      title:"A birthday on 29 February",
+      copy:"Leap day arrives four times a century. Leaplings spend most of their lives waiting for it." },
+    { tag:"Cards", odds:8.07e67, oddsText:"1 in 8.07 × 10<sup>67</sup>",
+      title:"One exact order of a shuffled deck",
+      copy:"More arrangements than there are atoms on Earth. Your last shuffle was almost certainly a first." },
+    { tag:"Sports", odds:12500, oddsText:"1 in 12,500",
+      title:"A hole-in-one for the average golfer",
+      copy:"Par threes are short. Probability is not. Skill narrows the odds far more than luck does." },
+    { tag:"Weather", odds:1222000, oddsText:"1 in 1.22 million",
+      title:"Struck by lightning in a given year",
+      copy:"Roughly 25 million strikes reach the US ground annually. Around 20 people a year don't walk away." },
+    { tag:"Sport", odds:11500, oddsText:"1 in 11,500",
+      title:"A perfect 300 bowling game",
+      copy:"Twelve strikes in a row, zero margin for a single pin. The last frame is where it dies." }
+  ];
+
+  var SCALE = [
+    { label:"A deck shuffled into one exact order", odds:8.07e67 },
+    { label:"A perfect NCAA tournament bracket",   odds:9.22e18 },
+    { label:"Winning the Powerball jackpot",        odds:292201338 },
+    { label:"Struck by lightning in a given year",  odds:1222000 },
+    { label:"A royal flush dealt in five cards",    odds:649739 },
+    { label:"A hole-in-one, average golfer",        odds:12500 },
+    { label:"A perfect 300 bowling game",           odds:11500 },
+    { label:"A birthday on 29 February",            odds:1461 },
+    { label:"Ten heads in a row",                   odds:1024 },
+    { label:"Two people share a birthday (n = 23)", odds:2 }
+  ];
+
+  var SIMS = {
+    coin:  { p:0.5,        label:"1 in 2",     note:"The baseline. Everything else on this page is measured against a coin." },
+    die:   { p:1/6,        label:"1 in 6",     note:"Six faces, one of them kind. Watch how far a thousand rolls can stray." },
+    ace:   { p:4/52,       label:"1 in 13",    note:"Thirteen ranks, four aces. The deck has no memory of the last draw." },
+    d20:   { p:1/20,       label:"1 in 20",    note:"A natural twenty. Rare enough to cheer, common enough to expect eventually." },
+    leap:  { p:1/1461,     label:"1 in 1,461", note:"At this rate you need a crowd before anything interesting happens." }
+  };
+
+  var ns = function (n) { return n.toLocaleString("en-US"); };
+
+  /* ─────────── dot field ─────────── */
+  function makeDots(el, total, lit) {
+    if (!el) return;
+    el.style.setProperty("--cols", el.dataset.cols || 40);
+    var frag = document.createDocumentFragment();
+    for (var i = 0; i < total; i++) {
+      var d = document.createElement("span");
+      d.className = "dot" + (i === lit ? " lit" : "");
+      frag.appendChild(d);
+    }
+    el.appendChild(frag);
+  }
+  makeDots(document.getElementById("heroDots"), 1000, 428);
+
+  /* ─────────── the board ─────────── */
+  (function () {
+    var grid = document.getElementById("board-grid");
+    if (!grid) return;
+    var maxLog = Math.log10(8.07e67);
+
+    BOARD.forEach(function (item, i) {
+      var card = document.createElement("article");
+      card.className = "card reveal";
+      card.style.transitionDelay = (i % 4) * 70 + "ms";
+
+      var w = Math.max(1.5, (Math.log10(item.odds) / maxLog) * 100);
+
+      card.innerHTML =
+        '<span class="mono tag">' + item.tag + '</span>' +
+        '<div class="odds">' + item.oddsText + '</div>' +
+        '<div class="meter"><i data-w="' + w.toFixed(2) + '"></i></div>' +
+        '<h3>' + item.title + '</h3>' +
+        '<p>' + item.copy + '</p>';
+
+      grid.appendChild(card);
+    });
+  })();
+
+  /* ─────────── the scale ─────────── */
+  (function () {
+    var list = document.getElementById("scale-list");
+    if (!list) return;
+    var maxLog = Math.log10(SCALE[0].odds);
+
+    SCALE.forEach(function (item) {
+      var row = document.createElement("div");
+      row.className = "bar reveal";
+
+      var w = Math.max(2, (Math.log10(item.odds) / maxLog) * 100);
+      var val = item.odds >= 1e6
+        ? "1 in " + (item.odds / Math.pow(10, Math.floor(Math.log10(item.odds)))).toFixed(2) +
+          " × 10<sup>" + Math.floor(Math.log10(item.odds)) + "</sup>"
+        : "1 in " + ns(Math.round(item.odds));
+
+      row.innerHTML =
+        '<div class="label">' + item.label + '</div>' +
+        '<div class="track"><i data-w="' + w.toFixed(2) + '"></i></div>' +
+        '<div class="val">' + val + '</div>';
+
+      list.appendChild(row);
+    });
+  })();
+
+  /* ─────────── reveal + bars ─────────── */
+  (function () {
+    var targets = document.querySelectorAll(".reveal, .meter i, .track i");
+    if (!("IntersectionObserver" in window)) {
+      targets.forEach(function (t) {
+        t.classList.add("in");
+        if (t.dataset.w) t.style.width = t.dataset.w + "%";
+      });
+      return;
+    }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        var t = e.target;
+        t.classList.add("in");
+        if (t.dataset.w) t.style.width = t.dataset.w + "%";
+        io.unobserve(t);
+      });
+    }, { threshold: 0.15, rootMargin: "0px 0px -40px 0px" });
+
+    targets.forEach(function (t) { io.observe(t); });
+  })();
+
+  /* ─────────── simulator ─────────── */
+  (function () {
+    var chart   = document.getElementById("chart");
+    var sel     = document.getElementById("simPick");
+    var trueEl  = document.getElementById("trueOdds");
+    var noteEl  = document.getElementById("simNote");
+    var rTrials = document.getElementById("rTrials");
+    var rHits   = document.getElementById("rHits");
+    var rObs    = document.getElementById("rObs");
+    var rDev    = document.getElementById("rDev");
+    var runBtn  = document.getElementById("runBtn");
+    var resetBtn= document.getElementById("resetBtn");
+
+    if (!chart) return;
+
+    var current = SIMS.coin;
+
+    function paintEmpty() {
+      chart.innerHTML = buildChart([], current.p, 100, true);
+      rTrials.textContent = "0";
+      rHits.textContent = "0";
+      rObs.textContent = "—";
+      rDev.textContent = "—";
+    }
+
+    function syncMeta() {
+      trueEl.textContent = current.label;
+      noteEl.textContent = current.note;
+    }
+
+    sel.addEventListener("change", function () {
+      current = SIMS[sel.value];
+      syncMeta();
+      paintEmpty();
+    });
+
+    function run(n) {
+      var p = current.p;
+      var hits = 0;
+      var points = [];
+      var step = Math.max(1, Math.floor(n / 420));
+
+      for (var i = 1; i <= n; i++) {
+        if (Math.random() < p) hits++;
+        if (i % step === 0 || i === n) points.push([i, hits / i]);
+      }
+
+      chart.innerHTML = buildChart(points, p, n, false);
+      animatePath(chart.querySelector(".runline"));
+
+      rTrials.textContent = ns(n);
+      rHits.textContent = ns(hits);
+      rObs.textContent = (hits / n * 100).toFixed(hits / n < 0.01 ? 4 : 3) + "%";
+
+      var dev = (hits / n - p) / Math.sqrt(p * (1 - p) / n);
+      rDev.textContent = (dev >= 0 ? "+" : "") + dev.toFixed(2) + "σ";
+      rDev.style.color = Math.abs(dev) > 3 ? "var(--red)" : "";
+    }
+
+    function animatePath(path) {
+      if (!path) return;
+      var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (reduce) return;
+      var len = path.getTotalLength ? path.getTotalLength() : 0;
+      if (!len) return;
+      path.style.strokeDasharray = len;
+      path.style.strokeDashoffset = len;
+      path.getBoundingClientRect();
+      path.style.transition = "stroke-dashoffset 1100ms cubic-bezier(.22,1,.36,1)";
+      path.style.strokeDashoffset = "0";
+    }
+
+    document.querySelectorAll(".btns button[data-n]").forEach(function (b) {
+      b.addEventListener("click", function () { run(parseInt(b.dataset.n, 10)); });
+    });
+    runBtn.addEventListener("click", function () { run(10000); });
+    resetBtn.addEventListener("click", paintEmpty);
+
+    syncMeta();
+    paintEmpty();
+
+    /* ---- chart builder ---- */
+    function buildChart(points, p, n, empty) {
+      var W = 900, H = 350, ml = 62, mr = 20, mt = 20, mb = 42;
+      var iw = W - ml - mr, ih = H - mt - mb;
+
+      var maxObs = 0;
+      for (var k = 0; k < points.length; k++) if (points[k][1] > maxObs) maxObs = points[k][1];
+
+      var yMax = Math.min(1, Math.max(p * 3.1, maxObs * 1.12, 0.012));
+      var X = function (v) { return ml + (v / n) * iw; };
+      var Y = function (v) { return mt + ih - (Math.min(v, yMax) / yMax) * ih; };
+
+      var s = [];
+      s.push('<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Running probability against number of trials">');
+      s.push('<defs><clipPath id="plot"><rect x="' + ml + '" y="' + mt + '" width="' + iw + '" height="' + ih + '"/></clipPath></defs>');
+
+      /* horizontal gridlines */
+      for (var g = 0; g <= 4; g++) {
+        var yv = yMax * g / 4;
+        var y = Y(yv);
+        s.push('<line x1="' + ml + '" y1="' + y + '" x2="' + (W - mr) + '" y2="' + y + '" stroke="#D5CCBB" stroke-width="1"/>');
+        s.push('<text x="' + (ml - 11) + '" y="' + (y + 4) + '" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="12" fill="#7B7161">' +
+               (yv * 100).toFixed(yv < 0.02 ? 2 : 1) + '%</text>');
+      }
+
+      /* x ticks */
+      for (var t = 0; t <= 4; t++) {
+        var xv = n * t / 4, x = X(xv);
+        s.push('<line x1="' + x + '" y1="' + (mt + ih) + '" x2="' + x + '" y2="' + (mt + ih + 6) + '" stroke="#7B7161" stroke-width="1"/>');
+        s.push('<text x="' + x + '" y="' + (mt + ih + 24) + '" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="12" fill="#7B7161">' +
+               ns(Math.round(xv)) + '</text>');
+      }
+
+      /* ±3σ band */
+      if (!empty && points.length) {
+        var upper = "", lower = "";
+        var samples = 240;
+        for (var i = 0; i <= samples; i++) {
+          var xv2 = Math.max(2, (n * i / samples));
+          var se = Math.sqrt(p * (1 - p) / xv2);
+          var up = p + 3 * se, lo = Math.max(0, p - 3 * se);
+          upper += (i === 0 ? "M" : "L") + X(xv2).toFixed(2) + " " + Y(up).toFixed(2) + " ";
+          lower = "L" + X(xv2).toFixed(2) + " " + Y(lo).toFixed(2) + " " + lower;
+        }
+        s.push('<path d="' + upper + lower + 'Z" fill="#D6402A" opacity="0.11" clip-path="url(#plot)"/>');
+      }
+
+      /* true probability line */
+      s.push('<line x1="' + ml + '" y1="' + Y(p) + '" x2="' + (W - mr) + '" y2="' + Y(p) +
+             '" stroke="#16130E" stroke-width="1.5" stroke-dasharray="7 6"/>');
+      s.push('<text x="' + (W - mr - 6) + '" y="' + (Y(p) - 10) + '" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="11.5" letter-spacing="1.4" fill="#16130E">TRUE ' +
+             (p * 100).toFixed(2) + '%</text>');
+
+      /* running line */
+      if (points.length) {
+        var d = "";
+        for (var j = 0; j < points.length; j++) {
+          d += (j === 0 ? "M" : "L") + X(points[j][0]).toFixed(2) + " " + Y(points[j][1]).toFixed(2) + " ";
+        }
+        s.push('<path class="runline" d="' + d + '" fill="none" stroke="#D6402A" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" clip-path="url(#plot)"/>');
+        var last = points[points.length - 1];
+        s.push('<circle cx="' + X(last[0]).toFixed(2) + '" cy="' + Y(last[1]).toFixed(2) + '" r="5" fill="#D6402A" stroke="#F2EEE6" stroke-width="2.4"/>');
+      } else {
+        s.push('<text x="' + (ml + iw / 2) + '" y="' + (mt + ih / 2) + '" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="13" letter-spacing="2.2" fill="#7B7161">NO DATA — PRESS RUN</text>');
+      }
+
+      /* axis labels */
+      s.push('<text x="' + ml + '" y="' + (H - 8) + '" font-family="IBM Plex Mono,monospace" font-size="11" letter-spacing="1.6" fill="#7B7161">TRIALS</text>');
+      s.push('<text x="16" y="' + (mt + ih / 2) + '" font-family="IBM Plex Mono,monospace" font-size="11" letter-spacing="1.6" fill="#7B7161" transform="rotate(-90 16 ' + (mt + ih / 2) + ')" text-anchor="middle">OBSERVED RATE</text>');
+
+      s.push("</svg>");
+      return s.join("");
+    }
+  })();
+})();
+</script>
+</body>
+</html>
